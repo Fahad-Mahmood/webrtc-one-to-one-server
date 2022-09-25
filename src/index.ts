@@ -20,10 +20,12 @@ const d = {
   info: debug('info'),
 };
 
+const SOCKET_SERVER_OPTIONS = { cors: { origin: '*' } };
+
 // Socket.io connection/message handler
 const socketSignalingServer = (httpServerParams: Partial<ServerOptions> |
   http.Server | https.Server | undefined) => {
-  const io = new Server(httpServerParams);
+  const io = new Server(httpServerParams, SOCKET_SERVER_OPTIONS);
   io.on('connection', (socket) => {
     // convenience function to log server messages on the client
     const log = (...args: string[]) => {
@@ -33,10 +35,37 @@ const socketSignalingServer = (httpServerParams: Partial<ServerOptions> |
       d.info(array);
     };
 
-    socket.on('message', (message: string) => {
+    socket.on('message', (message: string, room: string) => {
       log('Client said: ', message);
-      // To support multiple rooms in app, would be room-only (not broadcast)
-      socket.broadcast.emit('message', message);
+      socket.to(room).emit('message', message);
+      if (message === 'bye') {
+        socket.leave(room);
+      }
+    });
+
+    socket.on('call initiated', (callerName: string, room: string) => {
+      socket.to(room).emit('call initiated', callerName);
+    });
+
+    socket.on('call accepted', (accepterName: string, room: string) => {
+      socket.to(room).emit('call accepted', accepterName);
+    });
+
+    socket.on('call rejected', async (room: string) => {
+      const clients = io.sockets.adapter.rooms.get(room);
+      if (clients?.values()) {
+        socket.to(room).emit('call rejected');
+        clients.forEach((socketId: string) => {
+          if (socketId !== socket.id) {
+            const socketToLeave = io.sockets.sockets.get(socketId) ?? null;
+            socketToLeave?.leave(room);
+          }
+        });
+      }
+    });
+
+    socket.on('leave room', (room: string) => {
+      socket.leave(room);
     });
 
     socket.on('create or join', (room: string) => {
