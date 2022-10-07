@@ -13,6 +13,6 @@
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true
     },
-    "include": ["src/index.ts", "src/config.json"],
+    "include": ["src/index.ts", "src/config.json", "src/generateIceServers.ts"],
     "exclude": ["./dist", "./node_modules"]
   }

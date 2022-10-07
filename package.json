@@ -9,8 +9,10 @@
     "async": ">=3.2.2",
     "colors": ">=1.1.2",
     "debug": ">=4.3.0",
+    "dotenv": "^16.0.3",
     "express": "^4.17.2",
-    "socket.io": "^3.1.2"
+    "socket.io": "^3.1.2",
+    "twilio": "^3.82.2"
   },
   "devDependencies": {
     "@types/async": "^3.2.12",

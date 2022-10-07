@@ -6,10 +6,11 @@ import { yellow, red, cyan } from 'colors';
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
+import 'dotenv/config';
 import expressServer from './config.json';
+import generateIceServers from './generateIceServers';
 
 const app = express();
-app.use(express.static('./web_client_demo'));
 
 // Debugging
 const d = {
@@ -68,12 +69,12 @@ const socketSignalingServer = (httpServerParams: Partial<ServerOptions> |
       socket.leave(room);
     });
 
-    socket.on('create or join', (room: string) => {
+    socket.on('create or join', async (room: string) => {
       log(`Received request to create or join room ${room}`);
 
       const clients = io.sockets.adapter.rooms.get(room);
       const numClients = clients ? clients.size : 0;
-
+      const iceServers = await generateIceServers();
       log(`Room ${room} now has ${numClients} client(s)`);
 
       if (numClients === 0) {
@@ -89,6 +90,7 @@ const socketSignalingServer = (httpServerParams: Partial<ServerOptions> |
       } else { // max two clients
         socket.emit('full', room);
       }
+      socket.emit('iceServers', iceServers);
 
       socket.on('disconnect', () => {
         log(`Client ID ${socket.id} disconnected.`);
